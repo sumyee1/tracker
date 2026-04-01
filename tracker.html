@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFA L1 · Pass Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Styrene+A:wght@300;400;500&family=Tiempos+Text:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f5f0e8;
+    --surface:   #faf7f2;
+    --surface2:  #f0ebe0;
+    --surface3:  #e8e0d0;
+    --border:    #ddd5c4;
+    --border2:   #c8bfad;
+    --text:      #2c2820;
+    --text2:     #6b6054;
+    --text3:     #9e9080;
+    --accent:    #b85c2c;
+    --accent2:   #a04e22;
+    --accent-glow: rgba(184,92,44,0.12);
+    --green:     #2d7a4f;
+    --green-dim: rgba(45,122,79,0.1);
+    --yellow:    #9a7200;
+    --yellow-dim:rgba(154,114,0,0.1);
+    --red:       #c0392b;
+    --red-dim:   rgba(192,57,43,0.1);
+    --blue:      #2563a8;
+    --blue-dim:  rgba(37,99,168,0.08);
+    --purple:    #6d28a0;
+    --radius:    10px;
+    --radius-sm: 6px;
+    --shadow:    0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Tiempos Text', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 268px 1fr;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    padding: 22px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 3px;
+  }
+
+  .sidebar-title {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--text);
+  }
+
+  .exam-countdown {
+    margin: 14px 16px 0;
+    background: linear-gradient(135deg, rgba(184,92,44,0.08), rgba(184,92,44,0.03));
+    border: 1px solid rgba(184,92,44,0.22);
+    border-radius: var(--radius);
+    padding: 13px 15px;
+  }
+
+  .countdown-days {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .countdown-label {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'Styrene A', sans-serif;
+    margin-top: 3px;
+    letter-spacing: 0.04em;
+  }
+
+  .exam-date-display {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 5px;
+    font-family: 'Styrene A', sans-serif;
+    font-style: italic;
+  }
+
+  .pass-likelihood {
+    margin: 10px 16px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 15px;
+    box-shadow: var(--shadow);
+  }
+
+  .pl-label {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 7px;
+  }
+
+  .pl-value {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 30px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 8px;
+    color: var(--accent);
+    transition: color 0.5s;
+  }
+
+  .pl-bar-track {
+    background: var(--surface3);
+    border-radius: 99px;
+    height: 5px;
+    overflow: hidden;
+  }
+
+  .pl-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1), background 0.5s;
+    background: linear-gradient(90deg, var(--accent), #d4784a);
+  }
+
+  .pl-bar-fill.high { background: linear-gradient(90deg, var(--green), #3da866); }
+  .pl-bar-fill.mid  { background: linear-gradient(90deg, var(--yellow), #c99a00); }
+
+  .pl-description {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 7px;
+    font-style: italic;
+    line-height: 1.45;
+  }
+
+  .nav-section { padding: 14px 16px 4px; }
+
+  .nav-section-label {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 5px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 9px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: 'Styrene A', sans-serif;
+    font-size: 13px;
+    color: var(--text2);
+    transition: all 0.13s;
+    margin-bottom: 1px;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(184,92,44,0.1); color: var(--accent); }
+
+  .nav-item .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .nav-item .mini-prog { margin-left: auto; font-size: 10px; color: var(--text3); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    font-family: 'Styrene A', sans-serif;
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+  }
+
+  .main { overflow-y: auto; }
+
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    padding: 18px 28px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .tab-btn {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 13px;
+    padding: 7px 15px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.13s;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    border-radius: 5px 5px 0 0;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(184,92,44,0.05); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .main-header {
+    padding: 22px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--surface);
+  }
+
+  .main-header h1 {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text);
+  }
+
+  .main-header .sub {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 3px;
+    font-family: 'Styrene A', sans-serif;
+  }
+
+  .today-badge {
+    background: rgba(184,92,44,0.1);
+    border: 1px solid rgba(184,92,44,0.25);
+    border-radius: 99px;
+    padding: 5px 13px;
+    font-family: 'Styrene A', sans-serif;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .content { padding: 22px 28px 52px; }
+
+  .week-block { margin-bottom: 30px; }
+
+  .week-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .week-title {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .week-tag {
+    font-size: 10px;
+    font-family: 'Styrene A', sans-serif;
+    padding: 2px 9px;
+    border-radius: 99px;
+    letter-spacing: 0.04em;
+  }
+
+  .week-tag.orange { background: rgba(184,92,44,0.1); color: var(--accent); border: 1px solid rgba(184,92,44,0.2); }
+  .week-tag.blue   { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(37,99,168,0.18); }
+  .week-tag.purple { background: rgba(109,40,160,0.08); color: var(--purple); border: 1px solid rgba(109,40,160,0.18); }
+  .week-tag.green  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(45,122,79,0.2); }
+
+  .week-pb-track { flex:1; max-width:120px; background:var(--surface3); border-radius:99px; height:4px; overflow:hidden; }
+  .week-pb-fill  { height:100%; border-radius:99px; background:var(--accent); transition:width .5s; }
+  .week-pct      { font-family:'Styrene A',sans-serif; font-size:11px; color:var(--text3); }
+
+  .sessions-grid { display: flex; flex-direction: column; gap: 5px; }
+
+  .session-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 15px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 13px;
+    align-items: start;
+    transition: all 0.14s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .session-card:hover { border-color: var(--border2); background: var(--surface2); }
+
+  .session-card.today {
+    border-color: rgba(184,92,44,0.35);
+    background: linear-gradient(135deg, rgba(184,92,44,0.05), var(--surface));
+  }
+
+  .session-card.today::before {
+    content:'';
+    position:absolute; left:0; top:0; bottom:0; width:3px;
+    background: var(--accent);
+    border-radius: 2px 0 0 2px;
+  }
+
+  .session-card.completed { opacity: 0.58; }
+  .session-card.completed .session-title { text-decoration: line-through; text-decoration-color: var(--text3); }
+
+  .session-checkbox {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.18s;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .session-card:hover .session-checkbox { border-color: var(--accent); }
+  .session-card.completed .session-checkbox { background: var(--green); border-color: var(--green); }
+  .session-checkbox svg { display: none; }
+  .session-card.completed .session-checkbox svg { display: block; }
+
+  .session-meta { flex: 1; min-width: 0; cursor: pointer; }
+
+  .session-day-label {
+    font-family: 'Styrene A', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 2px;
+  }
+
+  .session-title { font-size: 13.5px; color: var(--text); line-height: 1.4; font-family: 'Styrene A', sans-serif; }
+  .session-hours { font-size: 11px; color: var(--text3); margin-top: 3px; font-family: 'Styrene A', sans-serif; }
+  .session-tags  { margin-top: 5px; display: flex; gap: 4px; flex-wrap: wrap; }
+
+  .tag {
+    font-size: 10px;
+    font-family: 'Styrene A', sans-serif;
+    padding: 2px 7px;
+    border-radius: 99px;
+    letter-spacing: 0.03em;
+  }
+
+  .tag.fsa    { background:rgba(184,92,44,0.1); color:var(--accent); }
+  .tag.quant  { background:var(--red-dim); color:var(--red); }
+  .tag.ethics { background:var(--yellow-dim); color:var(--yellow); }
+  .tag.equity { background:var(--blue-dim); color:var(--blue); }
+  .tag.fi     { background:var(--green-dim); color:var(--green); }
+  .tag.eco    { background:rgba(109,40,160,0.08); color:var(--purple); }
+  .tag.corp   { background:rgba(154,114,0,0.1); color:var(--yellow); }
+  .tag.deriv  { background:rgba(184,92,44,0.08); color:#8b3a1a; }
+  .tag.port   { background:rgba(45,122,79,0.08); color:var(--green); }
+  .tag.alt    { background:rgba(109,40,160,0.07); color:var(--purple); }
+  .tag.mock   { background:var(--red-dim); color:var(--red); border:1px solid rgba(192,57,43,0.18); }
+
+  .session-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+
+  .today-pill {
+    font-family:'Styrene A',sans-serif; font-size:10px;
+    background:var(--accent); color:white;
+    padding:2px 8px; border-radius:99px;
+    letter-spacing:0.05em; text-transform:uppercase;
+  }
+
+  .q-log-btn {
+    font-family:'Styrene A',sans-serif; font-size:10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 3px 9px; border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.13s;
+    white-space: nowrap;
+  }
+
+  .q-log-btn:hover { background:var(--surface3); border-color:var(--border2); }
+  .q-log-btn.has-qs { background:rgba(37,99,168,0.08); border-color:rgba(37,99,168,0.2); color:var(--blue); }
+
+  .q-entries { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+
+  .q-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-family: 'Styrene A', sans-serif;
+    font-size: 12px;
+  }
+
+  .q-score { font-weight: 500; min-width: 40px; }
+  .q-score.good { color: var(--green); }
+  .q-score.ok   { color: var(--yellow); }
+  .q-score.poor { color: var(--red); }
+
+  .q-entry .q-topic  { color: var(--text2); flex: 1; }
+  .q-entry .q-date   { color: var(--text3); font-size: 10px; white-space:nowrap; }
+  .q-entry .q-delete { color: var(--text3); cursor: pointer; padding: 0 2px; font-size:15px; line-height:1; transition:color .13s; }
+  .q-entry .q-delete:hover { color: var(--red); }
+
+  .tube-tip {
+    background: rgba(37,99,168,0.05);
+    border: 1px solid rgba(37,99,168,0.15);
+    border-radius: var(--radius-sm);
+    padding: 7px 11px;
+    display: flex; gap: 8px; align-items: flex-start;
+    margin-top: 7px;
+  }
+
+  .tube-tip .tube-icon { font-size: 13px; flex-shrink:0; }
+  .tube-tip .tube-text { font-size: 11.5px; color:var(--blue); line-height:1.4; font-family:'Styrene A',sans-serif; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(44,40,32,0.4);
+    backdrop-filter: blur(3px);
+    z-index: 900;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 28px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-md);
+    animation: modalIn 0.24s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes modalIn {
+    from { transform: scale(0.92) translateY(8px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .modal h3 { font-family:'Styrene A',sans-serif; font-size:16px; font-weight:400; color:var(--text); margin-bottom:3px; }
+
+  .modal .modal-sub { font-size:12px; color:var(--text3); font-family:'Styrene A',sans-serif; margin-bottom:18px; line-height:1.4; }
+
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+
+  .form-field { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+
+  .form-field label { font-family:'Styrene A',sans-serif; font-size:10px; letter-spacing:0.07em; text-transform:uppercase; color:var(--text3); }
+
+  .form-field input, .form-field select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-family: 'Styrene A', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.13s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .form-field input:focus, .form-field select:focus { border-color: var(--accent); }
+
+  .score-hint { font-size:11px; color:var(--text3); font-family:'Styrene A',sans-serif; min-height:16px; font-style:italic; margin-top:-6px; margin-bottom:6px; }
+
+  .modal-btns { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+
+  .btn { font-family:'Styrene A',sans-serif; font-size:13px; padding:8px 18px; border-radius:var(--radius-sm); cursor:pointer; transition:all .13s; border:1px solid transparent; }
+  .btn-ghost   { background:transparent; border-color:var(--border); color:var(--text2); }
+  .btn-ghost:hover { background:var(--surface2); }
+  .btn-primary { background:var(--accent); color:white; border-color:var(--accent); }
+  .btn-primary:hover { background:var(--accent2); }
+
+  /* Overview */
+  .overview-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-bottom:24px; }
+
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:15px 17px; box-shadow:var(--shadow); }
+  .stat-label { font-family:'Styrene A',sans-serif; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); margin-bottom:7px; }
+  .stat-value { font-family:'Styrene A',sans-serif; font-size:28px; font-weight:300; line-height:1; color:var(--text); }
+  .stat-sub   { font-size:11px; color:var(--text3); margin-top:4px; font-family:'Styrene A',sans-serif; }
+
+  .section-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; margin-bottom:18px; box-shadow:var(--shadow); }
+
+  .section-title { font-family:'Styrene A',sans-serif; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); margin-bottom:14px; }
+
+  .q-topic-row { display:grid; grid-template-columns:140px 1fr 50px 55px; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+  .q-topic-row:last-child { border-bottom:none; }
+  .q-topic-name { font-family:'Styrene A',sans-serif; font-size:12px; color:var(--text); }
+  .q-acc-bar-track { background:var(--surface3); border-radius:99px; height:5px; overflow:hidden; }
+  .q-acc-bar-fill  { height:100%; border-radius:99px; transition:width .6s; }
+  .q-acc-pct { font-family:'Styrene A',sans-serif; font-size:12px; font-weight:500; text-align:right; }
+  .q-count   { font-family:'Styrene A',sans-serif; font-size:10px; color:var(--text3); text-align:right; }
+
+  .topic-row { display:grid; grid-template-columns:150px 1fr 60px 68px; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+  .topic-row:last-child { border-bottom:none; }
+  .topic-name { font-family:'Styrene A',sans-serif; font-size:12.5px; color:var(--text); }
+  .topic-bar-track { background:var(--surface3); border-radius:99px; height:5px; overflow:hidden; }
+  .topic-bar-fill  { height:100%; border-radius:99px; transition:width .7s cubic-bezier(0.34,1.56,0.64,1); }
+  .topic-weight    { font-family:'Styrene A',sans-serif; font-size:10px; color:var(--text3); text-align:right; }
+
+  .topic-status { font-size:10px; font-family:'Styrene A',sans-serif; padding:2px 9px; border-radius:99px; text-align:center; }
+  .topic-status.done   { background:var(--green-dim); color:var(--green); }
+  .topic-status.active { background:rgba(184,92,44,0.1); color:var(--accent); }
+  .topic-status.weak   { background:var(--red-dim); color:var(--red); }
+  .topic-status.todo   { background:var(--surface3); color:var(--text3); }
+
+  .streak-widget { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+
+  .streak-dot {
+    width:26px; height:26px; border-radius:50%;
+    background:var(--surface3); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:9px; font-family:'Styrene A',sans-serif; color:var(--text3);
+    transition:all .3s;
+  }
+
+  .streak-dot.done  { background:var(--accent); border-color:var(--accent); color:white; }
+  .streak-dot.today { border-color:var(--accent); color:var(--accent); background:rgba(184,92,44,0.08); }
+
+  .toast {
+    position:fixed; bottom:22px; right:22px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-left:3px solid var(--accent);
+    border-radius:var(--radius);
+    padding:13px 18px;
+    font-family:'Styrene A',sans-serif;
+    font-size:14px; color:var(--text);
+    box-shadow:var(--shadow-md);
+    z-index:999;
+    transform:translateY(80px); opacity:0;
+    transition:all .38s cubic-bezier(0.34,1.56,0.64,1);
+    max-width:280px;
+  }
+
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast-emoji { font-size:18px; margin-bottom:3px; }
+  .toast-msg { color:var(--text3); font-size:11px; margin-top:3px; line-height:1.4; }
+
+  #confetti-canvas { position:fixed; inset:0; pointer-events:none; z-index:1000; display:none; }
+
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border2); }
+
+  @media (max-width:720px) {
+    .shell { grid-template-columns:1fr; }
+    .sidebar { position:static; height:auto; }
+    .content { padding:14px 14px 48px; }
+    .main-header { padding:14px 16px; }
+    .tab-bar { padding:10px 14px 0; }
+    .topic-row,.q-topic-row { grid-template-columns:1fr 1fr; }
+    .overview-grid { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<div id="modal-overlay" class="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h3 id="modal-title">Log Practice Questions</h3>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Correct</label>
+        <input type="number" id="q-correct" min="0" placeholder="e.g. 14" oninput="updateScoreHint()">
+      </div>
+      <div class="form-field">
+        <label>Total Qs</label>
+        <input type="number" id="q-total" min="1" placeholder="e.g. 20" oninput="updateScoreHint()">
+      </div>
+    </div>
+    <div class="score-hint" id="score-hint">&nbsp;</div>
+    <div class="form-field">
+      <label>Topic</label>
+      <select id="q-topic">
+        <option value="FSA">FSA</option>
+        <option value="Quant">Quant</option>
+        <option value="Ethics">Ethics</option>
+        <option value="Equity">Equity</option>
+        <option value="Fixed Income">Fixed Income</option>
+        <option value="Economics">Economics</option>
+        <option value="Corporate Issuers">Corporate Issuers</option>
+        <option value="Derivatives">Derivatives</option>
+        <option value="Portfolio Mgmt">Portfolio Mgmt</option>
+        <option value="Alternatives">Alternatives</option>
+        <option value="Mixed">Mixed</option>
+        <option value="Mock Exam">Mock Exam</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Notes (optional)</label>
+      <input type="text" id="q-notes" placeholder="e.g. struggled with DTA/DTL">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveQEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">CFA Level 1</div>
+      <div class="sidebar-title">Pass Tracker</div>
+    </div>
+
+    <div class="exam-countdown">
+      <div class="countdown-days" id="countdown-days">—</div>
+      <div class="countdown-label">days to exam</div>
+      <div class="exam-date-display">5 May 2026 · updates live</div>
+    </div>
+
+    <div class="pass-likelihood">
+      <div class="pl-label">Pass Likelihood</div>
+      <div class="pl-value" id="pl-value">—%</div>
+      <div class="pl-bar-track">
+        <div class="pl-bar-fill" id="pl-bar" style="width:0%"></div>
+      </div>
+      <div class="pl-description" id="pl-desc">Complete sessions and log Q results to track this.</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Views</div>
+      <div class="nav-item active" id="nav-schedule" onclick="switchTab('schedule')">
+        <div class="dot" style="background:var(--accent)"></div>Schedule
+      </div>
+      <div class="nav-item" id="nav-overview" onclick="switchTab('overview')">
+        <div class="dot" style="background:var(--blue)"></div>Overview
+      </div>
+      <div class="nav-item" id="nav-qlog" onclick="switchTab('qlog')">
+        <div class="dot" style="background:var(--green)"></div>Q Log
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Weeks</div>
+      <div id="week-nav"></div>
+    </div>
+
+    <div class="sidebar-footer">
+      Streak: <span id="streak-count">0</span> day<span id="streak-pl">s</span> 🔥
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tbtn-schedule" onclick="switchTab('schedule')">Schedule</button>
+      <button class="tab-btn" id="tbtn-overview" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-btn" id="tbtn-qlog" onclick="switchTab('qlog')">Q Log</button>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div id="panel-schedule" class="tab-panel active">
+      <div class="main-header">
+        <div>
+          <h1>6-Week Study Plan</h1>
+          <div class="sub" id="today-label">Mar 25 – May 4, 2026</div>
+        </div>
+        <div class="today-badge" id="week-badge">Week 1</div>
+      </div>
+      <div class="content" id="schedule-content"></div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div id="panel-overview" class="tab-panel">
+      <div class="main-header">
+        <div><h1>Your Progress</h1>
+        <div class="sub">Sessions · Q accuracy · Topic mastery</div></div>
+      </div>
+      <div class="content">
+        <div class="overview-grid" id="stats-grid"></div>
+        <div class="section-card" id="q-breakdown"></div>
+        <div class="section-card">
+          <div class="section-title">Topic Coverage</div>
+          <div id="topics-table"></div>
+        </div>
+        <div class="section-card">
+          <div class="section-title">Study Streak — last 14 days</div>
+          <div class="streak-widget" id="streak-dots" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q LOG -->
+    <div id="panel-qlog" class="tab-panel">
+      <div class="main-header">
+        <div><h1>Practice Q Log</h1>
+        <div class="sub">All logged question attempts</div></div>
+        <button class="btn btn-primary" onclick="openFreeModal()">+ Add Entry</button>
+      </div>
+      <div class="content" id="qlog-content"></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-emoji" id="toast-emoji">✅</div>
+  <div id="toast-title">Done.</div>
+  <div class="toast-msg" id="toast-msg"></div>
+</div>
+
+<script>
+const EXAM_DATE = new Date('2026-05-05T09:00:00');
+
+const WEEKS = [
+  {id:'wk1',label:'Week 1',dates:'Mar 25–30',tag:'New Topics Sprint',tagClass:'orange',subtitle:'Economics + Corporate Issuers',sessions:[
+    {id:'w1d1',day:'Mon eve',date:'2026-03-25',hours:'2h',title:'Economics — Demand/Supply, Elasticity, Market Structures',tags:['eco'],tube:'Key definitions & diagrams ready for tube tomorrow'},
+    {id:'w1d2',day:'Wed eve',date:'2026-03-27',hours:'2h',title:'Economics — GDP, Business Cycles, Inflation, Monetary & Fiscal Policy',tags:['eco'],tube:'Policy effects flashcards on the tube'},
+    {id:'w1d3',day:'Friday',date:'2026-03-28',hours:'4–5h',title:'Economics — Intl Trade, FX, Currency Exchange + 30 CFA Qbank Qs',tags:['eco'],tube:null},
+    {id:'w1d4',day:'Saturday',date:'2026-03-29',hours:'5–6h',title:'Corporate Issuers — Capital Structure, Leverage, Dividends, Working Capital + 25 Qs',tags:['corp'],tube:null},
+    {id:'w1d5',day:'Sunday',date:'2026-03-30',hours:'5–6h',title:'Corporate Issuers revision + FSA Formulas #1: 10 core ratios (write by hand)',tags:['corp','fsa'],tube:'Tube Mon: quiz yourself on the 10 ratios'},
+  ]},
+  {id:'wk2',label:'Week 2',dates:'Mar 31 – Apr 6',tag:'New Topics Sprint',tagClass:'orange',subtitle:'Portfolio Mgmt + Derivatives + Alternatives',sessions:[
+    {id:'w2d1',day:'Mon eve',date:'2026-03-31',hours:'2h',title:'Portfolio Management — Risk/Return, Portfolio Theory, Efficient Frontier',tags:['port'],tube:'Tube: CAPM formula & inputs'},
+    {id:'w2d2',day:'Wed eve',date:'2026-04-01',hours:'2h',title:'Portfolio Management — CAPM, SML, Performance Measurement + 20 Qs',tags:['port'],tube:null},
+    {id:'w2d3',day:'Friday',date:'2026-04-03',hours:'4–5h',title:'Derivatives — Forwards, Futures, Options (payoff diagrams) — go slow',tags:['deriv'],tube:null},
+    {id:'w2d4',day:'Saturday',date:'2026-04-04',hours:'5–6h',title:'Derivatives — Swaps, Pricing, Binomial basics + 30 Qs',tags:['deriv'],tube:'Tube: option payoff diagrams'},
+    {id:'w2d5',day:'Sunday',date:'2026-04-05',hours:'5–6h',title:'Alternatives — full read (PE, Hedge Funds, RE, Commodities) + 25 Qs + FSA Formulas #2',tags:['alt','fsa'],tube:'Tube Mon: DuPont components quiz'},
+  ]},
+  {id:'wk3',label:'Week 3',dates:'Apr 7–13',tag:'🔴 FSA Deep Dive',tagClass:'orange',subtitle:'Your biggest risk — treat this like exam week',sessions:[
+    {id:'w3d1',day:'Mon eve',date:'2026-04-07',hours:'2h',title:'FSA — Income Statement: revenue recognition, EPS, non-recurring items + 20 Qs',tags:['fsa'],tube:'Tube: revenue recognition rules'},
+    {id:'w3d2',day:'Wed eve',date:'2026-04-09',hours:'2h',title:'FSA — Balance Sheet: assets, liabilities, equity, off-balance sheet + 20 Qs',tags:['fsa'],tube:'Tube: ratio formula cards'},
+    {id:'w3d3',day:'Friday',date:'2026-04-10',hours:'4–5h',title:'FSA — Cash Flow (direct/indirect, CFO/CFI/CFF) + 30 Qs + Inventories + Long-lived assets',tags:['fsa'],tube:null},
+    {id:'w3d4',day:'Saturday',date:'2026-04-11',hours:'5–6h',title:'FSA — Taxes (DTL/DTA), Reporting Quality, Intercorporate Investments + 40 Qs',tags:['fsa'],tube:null},
+    {id:'w3d5',day:'Sunday',date:'2026-04-12',hours:'5–6h',title:'FSA CONSOLIDATION — 50 Qbank FSA Qs timed (1 min each) + build personal error log',tags:['fsa'],tube:'Tube: review your error log'},
+  ]},
+  {id:'wk4',label:'Week 4',dates:'Apr 14–20',tag:'🔴 Quant + Ethics',tagClass:'orange',subtitle:'Quant responds fast to repetition',sessions:[
+    {id:'w4d1',day:'Mon eve',date:'2026-04-14',hours:'2h',title:'Quant — TVM, DCF, NPV/IRR: 15 calculation examples by hand',tags:['quant'],tube:'Tube: TVM formula sheet'},
+    {id:'w4d2',day:'Wed eve',date:'2026-04-16',hours:'2h',title:'Quant — Probability: conditional, joint, total probability, Bayes + 20 Qs',tags:['quant'],tube:'Tube: probability rules card'},
+    {id:'w4d3',day:'Friday',date:'2026-04-17',hours:'4–5h',title:'Quant — Distributions, Sampling, CLT + Hypothesis Testing (t/z-test, Type I/II) + 30 Qs',tags:['quant'],tube:null},
+    {id:'w4d4',day:'Saturday',date:'2026-04-18',hours:'5–6h',title:'Quant — Regression + 30 Qs + Ethics full re-read Standards I–VII',tags:['quant','ethics'],tube:null},
+    {id:'w4d5',day:'Sunday',date:'2026-04-19',hours:'5–6h',title:'Ethics — 50 Qbank Ethics Qs timed. Review every wrong answer.',tags:['ethics'],tube:'Tube: tricky Ethics scenarios'},
+  ]},
+  {id:'wk5',label:'Week 5',dates:'Apr 21–27',tag:'Revision + Mock #1',tagClass:'purple',subtitle:'Revision mode — 30min content + 90min Qs per evening',sessions:[
+    {id:'w5d1',day:'Mon eve',date:'2026-04-21',hours:'2h',title:'Fixed Income — Bond valuation, YTM, spot rates, duration, convexity + 25 Qs',tags:['fi'],tube:'Tube: duration formula + convexity'},
+    {id:'w5d2',day:'Wed eve',date:'2026-04-23',hours:'2h',title:'Equity — DDM, P/E, EV/EBITDA, industry analysis + 25 Qs',tags:['equity'],tube:'Tube: valuation model inputs'},
+    {id:'w5d3',day:'Friday',date:'2026-04-24',hours:'4–5h',title:'Mixed drilling — Econ, Corp Issuers, Port Mgmt, Alternatives (20 Qs each)',tags:['eco','corp','port','alt'],tube:null},
+    {id:'w5d4',day:'Saturday',date:'2026-04-25',hours:'5–6h',title:'🧪 MOCK EXAM #1 — Full 180 Qs, strictly timed (3 hours). No notes. No pausing.',tags:['mock'],tube:null},
+    {id:'w5d5',day:'Sunday',date:'2026-04-26',hours:'5–6h',title:'Mock #1 Full Review — every wrong answer, categorise by topic, build weak list',tags:['mock'],tube:null},
+  ]},
+  {id:'wk6',label:'Week 6',dates:'Apr 28 – May 4',tag:'Final Push',tagClass:'green',subtitle:'No new material — drilling, revision, confidence',sessions:[
+    {id:'w6d1',day:'Mon eve',date:'2026-04-28',hours:'2h',title:'Drill top 2 weak topics from Mock #1 — 30 targeted Qs each',tags:[],tube:'Tube: formula sheet for weak topics'},
+    {id:'w6d2',day:'Wed eve',date:'2026-04-29',hours:'2h',title:'Drill next 2 weak topics from Mock #1 — 30 more targeted Qs',tags:[],tube:null},
+    {id:'w6d3',day:'Friday',date:'2026-05-01',hours:'4–5h',title:'🧪 MOCK EXAM #2 — Full 180 Qs timed. Then: 1h review FSA + Quant error logs',tags:['mock'],tube:null},
+    {id:'w6d4',day:'Saturday',date:'2026-05-02',hours:'3–4h',title:'Mock #2 review (wrong answers only) + Ethics final read-through',tags:['mock','ethics'],tube:null},
+    {id:'w6d5',day:'Sunday',date:'2026-05-03',hours:'1–2h',title:'Formula sheet read-through only. No new Qs. Rest. Sleep by 10pm. 💤',tags:[],tube:'Day before: reinforce, do not cram. You are ready.'},
+  ]},
+];
+
+const TOPICS = [
+  {name:'Ethics',         weight:'15–20%',init:'mid', color:'var(--yellow)',tags:['ethics']},
+  {name:'FSA',            weight:'13–17%',init:'weak',color:'var(--accent)',tags:['fsa']},
+  {name:'Equity',         weight:'10–12%',init:'mid', color:'var(--blue)',  tags:['equity']},
+  {name:'Fixed Income',   weight:'10–12%',init:'mid', color:'var(--green)', tags:['fi']},
+  {name:'Economics',      weight:'8–12%', init:'todo',color:'var(--purple)',tags:['eco']},
+  {name:'Corporate Issr', weight:'8–10%', init:'todo',color:'var(--yellow)',tags:['corp']},
+  {name:'Quant',          weight:'6–9%',  init:'weak',color:'var(--red)',   tags:['quant']},
+  {name:'Derivatives',    weight:'5–8%',  init:'todo',color:'#8b3a1a',      tags:['deriv']},
+  {name:'Portfolio Mgmt', weight:'5–8%',  init:'todo',color:'var(--green)', tags:['port']},
+  {name:'Alternatives',   weight:'5–8%',  init:'todo',color:'var(--purple)',tags:['alt']},
+];
+
+const CELEBRATES = [
+  {e:'⚡',t:'Session locked in!',     m:'That\'s how you build a pass.'},
+  {e:'📈',t:'Progress logged.',        m:'Your likelihood just went up.'},
+  {e:'🧠',t:'Done. Brain gains made.', m:'Rest, then do it again.'},
+  {e:'🔥',t:'Streak extended!',        m:'Momentum is everything.'},
+  {e:'💪',t:'Another one down.',       m:'You\'re ahead of most candidates right now.'},
+  {e:'✅',t:'Session complete.',       m:'Keep the machine running.'},
+];
+
+const Q_CELEBRATES = [
+  {e:'📊',t:'Questions logged.',   m:'Q accuracy feeds your pass likelihood directly.'},
+  {e:'🎯',t:'Attempt recorded.',   m:'Every rep builds pattern recognition.'},
+  {e:'📝',t:'Q entry saved.',      m:'The error log is your secret weapon.'},
+];
+
+let STATE = {completed:{}, streak:[], qEntries:[]};
+
+function loadState()  { try { const s=localStorage.getItem('cfa_v3'); if(s) STATE=JSON.parse(s); } catch(e){} }
+function saveState()  { localStorage.setItem('cfa_v3', JSON.stringify(STATE)); }
+
+function todayStr()   { return new Date().toISOString().slice(0,10); }
+function daysLeft()   { return Math.max(0, Math.ceil((EXAM_DATE - new Date()) / 86400000)); }
+function allSess()    { return WEEKS.flatMap(w=>w.sessions); }
+function findSess(id) { return allSess().find(s=>s.id===id); }
+
+function wkProgress(wkId) {
+  const wk=WEEKS.find(w=>w.id===wkId);
+  if(!wk) return {done:0,total:0};
+  return {done:wk.sessions.filter(s=>STATE.completed[s.id]).length, total:wk.sessions.length};
+}
+
+function currentWkIdx() {
+  const t=todayStr();
+  const b=[{s:'2026-03-25',e:'2026-03-30'},{s:'2026-03-31',e:'2026-04-06'},{s:'2026-04-07',e:'2026-04-13'},{s:'2026-04-14',e:'2026-04-20'},{s:'2026-04-21',e:'2026-04-27'},{s:'2026-04-28',e:'2026-05-04'}];
+  for(let i=0;i<b.length;i++) if(t>=b[i].s&&t<=b[i].e) return i;
+  return t<b[0].s?0:5;
+}
+
+function approxHours() {
+  const map={'2h':2,'4–5h':4.5,'5–6h':5.5,'3–4h':3.5,'1–2h':1.5};
+  return Math.round(allSess().filter(s=>STATE.completed[s.id]).reduce((a,s)=>a+(map[s.hours]||3),0));
+}
+
+function computeStreak() {
+  if(!STATE.streak.length) return 0;
+  const s=[...STATE.streak].sort().reverse();
+  let n=0, c=todayStr();
+  for(let i=0;i<60;i++){
+    if(s.includes(c)){ n++; const d=new Date(c+'T12:00:00'); d.setDate(d.getDate()-1); c=d.toISOString().slice(0,10); }
+    else break;
+  }
+  return n;
+}
+
+function qByTopic() {
+  const m={};
+  for(const e of STATE.qEntries){
+    if(!m[e.topic]) m[e.topic]={correct:0,total:0};
+    m[e.topic].correct+=e.correct; m[e.topic].total+=e.total;
+  }
+  return m;
+}
+
+function overallAcc() {
+  const tot=STATE.qEntries.reduce((a,e)=>a+e.total,0);
+  const cor=STATE.qEntries.reduce((a,e)=>a+e.correct,0);
+  return tot===0?null:{correct:cor,total:tot,pct:Math.round(cor/tot*100)};
+}
+
+function accColor(pct) { return pct>=70?'var(--green)':pct>=55?'var(--yellow)':'var(--red)'; }
+function accClass(pct) { return pct>=70?'good':pct>=55?'ok':'poor'; }
+
+function passLikelihood() {
+  const done=Object.keys(STATE.completed).length;
+  const total=allSess().length;
+  const pct=total===0?0:done/total;
+
+  let score = 40 + pct*30;
+
+  const fsaIds   = ['w3d1','w3d2','w3d3','w3d4','w3d5'];
+  const quantIds = ['w4d1','w4d2','w4d3','w4d4'];
+  score += fsaIds.filter(id=>STATE.completed[id]).length/fsaIds.length * 7;
+  score += quantIds.filter(id=>STATE.completed[id]).length/quantIds.length * 5;
+  if(STATE.completed['w5d4']) score+=4;
+  if(STATE.completed['w6d3']) score+=4;
+
+  const acc=overallAcc();
+  if(acc){
+    score += Math.max(-6, (acc.pct-50)*0.3);
+    const bt=qByTopic();
+    const fa=bt['FSA']?bt['FSA'].correct/bt['FSA'].total:null;
+    const qa=bt['Quant']?bt['Quant'].correct/bt['Quant'].total:null;
+    const ea=bt['Ethics']?bt['Ethics'].correct/bt['Ethics'].total:null;
+    if(fa!==null) score+=(fa-0.6)*8;
+    if(qa!==null) score+=(qa-0.6)*5;
+    if(ea!==null) score+=(ea-0.6)*4;
+    score+=Math.min(5,acc.total/60);
+  }
+
+  return Math.min(93,Math.max(5,Math.round(score)));
+}
+
+function plDesc(pl,acc) {
+  if(pl>=78) return 'Strong position. Keep drilling weak spots.';
+  if(pl>=65) return 'On track. Q accuracy is the fastest lever to push this up.';
+  if(!acc)   return 'Log practice Q results to calibrate this further.';
+  if(acc.pct<60) return `${acc.pct}% accuracy needs to reach 65%+ — drill your errors.`;
+  return 'Consistency now. FSA and Quant sessions are the priority.';
+}
+
+function fmtDate(str) {
+  return new Date(str+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+
+// ── RENDER ──────────────────────────────────────────────────────────
+function renderAll() {
+  renderCountdown();
+  renderSidebar();
+  renderSchedule();
+  const active=document.querySelector('.tab-panel.active');
+  if(active){
+    if(active.id==='panel-overview') renderOverview();
+    if(active.id==='panel-qlog') renderQLog();
+  }
+}
+
+function renderCountdown() {
+  document.getElementById('countdown-days').textContent=daysLeft();
+  document.getElementById('today-label').textContent='Today: '+new Date(todayStr()+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function renderSidebar() {
+  const pl=passLikelihood(), acc=overallAcc();
+  const plEl=document.getElementById('pl-value'), bar=document.getElementById('pl-bar');
+  plEl.textContent=pl+'%'; bar.style.width=pl+'%';
+  if(pl>=70){plEl.style.color='var(--green)';bar.className='pl-bar-fill high';}
+  else if(pl>=55){plEl.style.color='var(--yellow)';bar.className='pl-bar-fill mid';}
+  else{plEl.style.color='var(--accent)';bar.className='pl-bar-fill';}
+  document.getElementById('pl-desc').textContent=plDesc(pl,acc);
+
+  document.getElementById('week-nav').innerHTML=WEEKS.map(w=>{
+    const{done,total}=wkProgress(w.id);
+    const dot=done===total&&total>0?'var(--green)':done>0?'var(--accent)':'var(--surface3)';
+    return `<div class="nav-item" onclick="scrollToWeek('${w.id}')">
+      <div class="dot" style="background:${dot}"></div>${w.label}
+      <span class="mini-prog">${done}/${total}</span>
+    </div>`;
+  }).join('');
+
+  const s=computeStreak();
+  document.getElementById('streak-count').textContent=s;
+  document.getElementById('streak-pl').textContent=s===1?'':'s';
+  document.getElementById('week-badge').textContent='Week '+(currentWkIdx()+1);
+}
+
+function renderSchedule() {
+  const tStr=todayStr();
+  document.getElementById('schedule-content').innerHTML=WEEKS.map(wk=>{
+    const{done,total}=wkProgress(wk.id);
+    const pct=total>0?Math.round(done/total*100):0;
+    const sessHTML=wk.sessions.map(s=>{
+      const isToday=s.date===tStr, isDone=!!STATE.completed[s.id];
+      const qCount=STATE.qEntries.filter(e=>e.sessionId===s.id).length;
+      const tagsHTML=s.tags.map(t=>`<span class="tag ${t}">${t.toUpperCase()}</span>`).join('');
+      const tubeHTML=s.tube?`<div class="tube-tip"><span class="tube-icon">🚇</span><span class="tube-text">${s.tube}</span></div>`:'';
+      const qEntHTML=STATE.qEntries.filter(e=>e.sessionId===s.id).map(e=>{
+        const p=Math.round(e.correct/e.total*100);
+        return `<div class="q-entry">
+          <span class="q-score ${accClass(p)}">${e.correct}/${e.total}</span>
+          <span class="q-topic">${e.topic}${e.notes?' · <em style="color:var(--text3)">'+e.notes+'</em>':''}</span>
+          <span class="q-date">${fmtDate(e.date)}</span>
+          <span class="q-delete" onclick="delQ('${e.id}',event)">×</span>
+        </div>`;
+      }).join('');
+
+      return `<div class="session-card ${isToday?'today':''} ${isDone?'completed':''}" id="card-${s.id}">
+        <div class="session-checkbox" onclick="toggleSess('${s.id}')">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M1.5 5L4 7.5L8.5 2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="session-meta" onclick="toggleSess('${s.id}')">
+          <div class="session-day-label">${s.day} · ${fmtDate(s.date)}</div>
+          <div class="session-title">${s.title}</div>
+          <div class="session-hours">${s.hours}</div>
+          ${tagsHTML?`<div class="session-tags">${tagsHTML}</div>`:''}
+          ${tubeHTML}
+          ${qEntHTML?`<div class="q-entries">${qEntHTML}</div>`:''}
+        </div>
+        <div class="session-right">
+          ${isToday?'<div class="today-pill">Today</div>':''}
+          <button class="q-log-btn ${qCount>0?'has-qs':''}" onclick="openModal('${s.id}',event)">
+            ${qCount>0?qCount+' Q'+(qCount>1?'s':'')+' ✓':'+ Qs'}
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="week-block" id="${wk.id}">
+      <div class="week-header">
+        <div class="week-title">${wk.label}: ${wk.subtitle}</div>
+        <span class="week-tag ${wk.tagClass}">${wk.tag}</span>
+        <div class="week-pb-track"><div class="week-pb-fill" style="width:${pct}%"></div></div>
+        <div class="week-pct">${pct}%</div>
+      </div>
+      <div class="sessions-grid">${sessHTML}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderOverview() {
+  const done=Object.keys(STATE.completed).length, total=allSess().length;
+  const wkIdx=currentWkIdx();
+  const{done:wkD,total:wkT}=wkProgress(WEEKS[wkIdx].id);
+  const acc=overallAcc();
+  const totalQs=STATE.qEntries.reduce((a,e)=>a+e.total,0);
+
+  document.getElementById('stats-grid').innerHTML=[
+    {l:'Sessions Done',v:done,s:`of ${total} total`},
+    {l:'This Week',v:wkD,s:`of ${wkT} sessions`},
+    {l:'Hours Studied',v:approxHours()+'h',s:'estimated'},
+    {l:'Qs Attempted',v:totalQs,s:'across all topics'},
+    {l:'Overall Accuracy',v:acc?acc.pct+'%':'—',s:acc?`${acc.correct}/${acc.total} correct`:'Log Qs to see'},
+    {l:'Pass Likelihood',v:passLikelihood()+'%',s:'all signals combined'},
+  ].map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value">${s.v}</div><div class="stat-sub">${s.s}</div></div>`).join('');
+
+  const bt=qByTopic(), tns=Object.keys(bt);
+  let qHtml=`<div class="section-title">Q Accuracy by Topic <span style="float:right;font-weight:normal;text-transform:none;letter-spacing:0">${totalQs} questions attempted</span></div>`;
+  if(!tns.length){
+    qHtml+=`<div style="font-family:'Styrene A',sans-serif;font-size:13px;color:var(--text3);padding:8px 0">No questions logged yet — use the "+ Qs" button on any session card.</div>`;
+  } else {
+    qHtml+=tns.sort().map(t=>{
+      const{correct,total}=bt[t], p=Math.round(correct/total*100);
+      return `<div class="q-topic-row">
+        <div class="q-topic-name">${t}</div>
+        <div class="q-acc-bar-track"><div class="q-acc-bar-fill" style="width:${p}%;background:${accColor(p)}"></div></div>
+        <div class="q-acc-pct" style="color:${accColor(p)}">${p}%</div>
+        <div class="q-count">${correct}/${total}</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('q-breakdown').innerHTML=qHtml;
+
+  document.getElementById('topics-table').innerHTML=TOPICS.map(t=>{
+    const rel=allSess().filter(s=>s.tags.some(tag=>t.tags.includes(tag)));
+    const dp=rel.length===0?0:Math.round(rel.filter(s=>STATE.completed[s.id]).length/rel.length*100);
+    let sl,sc;
+    if(dp===100){sl='Done';sc='done';}
+    else if(dp>0){sl='Active';sc='active';}
+    else if(t.init==='weak'){sl='Weak';sc='weak';}
+    else{sl='Todo';sc='todo';}
+    return `<div class="topic-row">
+      <div class="topic-name">${t.name}</div>
+      <div class="topic-bar-track"><div class="topic-bar-fill" style="width:${dp}%;background:${t.color}"></div></div>
+      <div class="topic-weight">${t.weight}</div>
+      <div class="topic-status ${sc}">${sl}</div>
+    </div>`;
+  }).join('');
+
+  const tStr=todayStr();
+  let sdots='';
+  for(let i=13;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    const has=STATE.streak.includes(ds), isT=ds===tStr;
+    sdots+=`<div class="streak-dot ${has?'done':''} ${isT&&!has?'today':''}" title="${ds}">${d.getDate()}</div>`;
+  }
+  document.getElementById('streak-dots').innerHTML=sdots;
+}
+
+function renderQLog() {
+  const el=document.getElementById('qlog-content');
+  if(!STATE.qEntries.length){
+    el.innerHTML=`<div style="font-family:'Styrene A',sans-serif;font-size:14px;color:var(--text3);padding:32px 0;text-align:center;line-height:2.2">No practice questions logged yet.<br><span style="font-size:12px">Use "+ Qs" on any session card, or click "+ Add Entry" above.</span></div>`;
+    return;
+  }
+  const byDate={};
+  for(const e of [...STATE.qEntries].sort((a,b)=>b.ts-a.ts)){
+    if(!byDate[e.date]) byDate[e.date]=[];
+    byDate[e.date].push(e);
+  }
+  el.innerHTML=Object.entries(byDate).map(([date,entries])=>{
+    const dT=entries.reduce((a,e)=>a+e.total,0);
+    const dC=entries.reduce((a,e)=>a+e.correct,0);
+    const dP=Math.round(dC/dT*100);
+    const rows=entries.map(e=>{
+      const p=Math.round(e.correct/e.total*100);
+      const sess=e.sessionId?findSess(e.sessionId):null;
+      return `<div class="q-entry" style="background:var(--surface);margin-bottom:4px">
+        <span class="q-score ${accClass(p)}">${e.correct}/${e.total}</span>
+        <span class="q-topic">${e.topic}${e.notes?` · <em style="color:var(--text3)">${e.notes}</em>`:''}</span>
+        ${sess?`<span style="font-size:10px;color:var(--text3);font-family:'Styrene A',sans-serif">${sess.day}</span>`:''}
+        <span class="q-delete" onclick="delQ('${e.id}',event)">×</span>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:22px">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px">
+        <div style="font-family:'Styrene A',sans-serif;font-size:13px;color:var(--text);font-weight:500">${fmtDate(date)}</div>
+        <div style="font-family:'Styrene A',sans-serif;font-size:11px;color:${accColor(dP)}">${dP}% · ${dC}/${dT} correct</div>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+// ── ACTIONS ─────────────────────────────────────────────────────────
+function toggleSess(id) {
+  const was=!!STATE.completed[id];
+  if(was){
+    delete STATE.completed[id];
+    const t=todayStr();
+    if(!allSess().filter(s=>s.date===t).some(s=>STATE.completed[s.id]))
+      STATE.streak=STATE.streak.filter(d=>d!==t);
+  } else {
+    STATE.completed[id]=Date.now();
+    const t=todayStr();
+    if(!STATE.streak.includes(t)) STATE.streak.push(t);
+    const c=CELEBRATES[Math.floor(Math.random()*CELEBRATES.length)];
+    toast(c.e,c.t,c.m); confetti();
+  }
+  saveState(); renderAll();
+}
+
+let _modalSessId=null;
+
+function openModal(sessId,e){
+  e.stopPropagation();
+  _modalSessId=sessId;
+  const sess=findSess(sessId);
+  document.getElementById('modal-sub').textContent=sess?sess.day+' · '+sess.title.slice(0,55)+'…':'';
+  if(sess&&sess.tags.length){
+    const m={fsa:'FSA',quant:'Quant',ethics:'Ethics',equity:'Equity',fi:'Fixed Income',eco:'Economics',corp:'Corporate Issuers',deriv:'Derivatives',port:'Portfolio Mgmt',alt:'Alternatives',mock:'Mock Exam'};
+    const v=m[sess.tags[0]]; if(v) document.getElementById('q-topic').value=v;
+  }
+  document.getElementById('q-correct').value='';
+  document.getElementById('q-total').value='';
+  document.getElementById('q-notes').value='';
+  document.getElementById('score-hint').innerHTML='&nbsp;';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openFreeModal(){
+  _modalSessId=null;
+  document.getElementById('modal-sub').textContent='Not tied to a specific session';
+  document.getElementById('q-correct').value='';
+  document.getElementById('q-total').value='';
+  document.getElementById('q-notes').value='';
+  document.getElementById('score-hint').innerHTML='&nbsp;';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOutside(e){ if(e.target===document.getElementById('modal-overlay')) closeModal(); }
+
+function updateScoreHint(){
+  const cor=parseInt(document.getElementById('q-correct').value);
+  const tot=parseInt(document.getElementById('q-total').value);
+  const h=document.getElementById('score-hint');
+  if(cor>=0&&tot>0&&cor<=tot){
+    const p=Math.round(cor/tot*100);
+    const msg=p>=70?'✓ Above pass threshold':p>=55?'⚠ Close — keep drilling':'✗ Below target — log your errors';
+    h.textContent=p+'% — '+msg; h.style.color=accColor(p);
+  } else { h.innerHTML='&nbsp;'; }
+}
+
+function saveQEntry(){
+  const cor=parseInt(document.getElementById('q-correct').value);
+  const tot=parseInt(document.getElementById('q-total').value);
+  const topic=document.getElementById('q-topic').value;
+  const notes=document.getElementById('q-notes').value.trim();
+  const h=document.getElementById('score-hint');
+  if(isNaN(cor)||isNaN(tot)||tot<1||cor<0||cor>tot){
+    h.textContent='Please enter valid correct / total values.'; h.style.color='var(--red)'; return;
+  }
+  STATE.qEntries.push({id:'q_'+Date.now(),sessionId:_modalSessId,topic,correct:cor,total:tot,notes,date:todayStr(),ts:Date.now()});
+  saveState(); closeModal();
+  const c=Q_CELEBRATES[Math.floor(Math.random()*Q_CELEBRATES.length)];
+  toast(c.e,c.t,c.m); renderAll();
+}
+
+function delQ(id,e){
+  e.stopPropagation();
+  STATE.qEntries=STATE.qEntries.filter(q=>q.id!==id);
+  saveState(); renderAll();
+}
+
+function toast(emoji,title,msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-emoji').textContent=emoji;
+  document.getElementById('toast-title').textContent=title;
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+function confetti(){
+  const cv=document.getElementById('confetti-canvas');
+  cv.style.display='block';
+  const ctx=cv.getContext('2d');
+  cv.width=window.innerWidth; cv.height=window.innerHeight;
+  const cols=['#b85c2c','#2d7a4f','#2563a8','#9a7200','#6d28a0','#c0392b'];
+  const ps=Array.from({length:50},()=>({
+    x:Math.random()*cv.width,y:-10,w:Math.random()*7+4,h:Math.random()*11+5,
+    color:cols[Math.floor(Math.random()*cols.length)],
+    vy:Math.random()*4+2,vx:(Math.random()-.5)*3,rot:Math.random()*360,rotV:(Math.random()-.5)*6,
+  }));
+  let f=0;
+  function anim(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    for(const p of ps){
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.rotV;p.vy+=0.04;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color;ctx.globalAlpha=Math.max(0,1-f/80);
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+    }
+    f++;
+    if(f<90) requestAnimationFrame(anim);
+    else{cv.style.display='none';ctx.clearRect(0,0,cv.width,cv.height);}
+  }
+  anim();
+}
+
+function switchTab(tab){
+  ['schedule','overview','qlog'].forEach(t=>{
+    document.getElementById('panel-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tbtn-'+t).classList.toggle('active',t===tab);
+    document.getElementById('nav-'+t)?.classList.toggle('active',t===tab);
+  });
+  if(tab==='overview') renderOverview();
+  if(tab==='qlog') renderQLog();
+}
+
+function scrollToWeek(wkId){
+  switchTab('schedule');
+  setTimeout(()=>{ const el=document.getElementById(wkId); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },50);
+}
+
+loadState();
+renderAll();
+setInterval(()=>{ document.getElementById('countdown-days').textContent=daysLeft(); }, 60000);
+</script>
+</body>
+</html>
